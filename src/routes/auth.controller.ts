@@ -1,19 +1,15 @@
 import { jwt } from '@elysiajs/jwt';
 import { Elysia,Handler,t } from 'elysia';
 import User, { IUser } from '../database/models/users.schema';
-import { cookie } from '@elysiajs/cookie';
+
 import authModule from '../modules/auth.module'; 
 
 export const authController = new Elysia({prefix: '/auth'})
-    .use(cookie())
+    
     .use(jwt({
         name: 'jwt',
         secret: process.env.JWT_SECRET as string,
-        exp: '7d'
     }))
-    .get('/test', async () => {
-        return { message: 'Hello World!' };
-    })
     .post('/signIn', async ({jwt,cookie:{auth},body,set}) => {
         body: t.Object({
             email: t.String(),
@@ -21,7 +17,7 @@ export const authController = new Elysia({prefix: '/auth'})
         });
 
         const { password, email } = body as { password: string, email: string };
-
+        
         const user = await User.findOne({ email });
         if (!user) {
             return { error: 'User not found' };
@@ -31,10 +27,17 @@ export const authController = new Elysia({prefix: '/auth'})
         if (!isValid) {
             return { error: 'Invalid password' };
         }
-
         set.status = 200;
-        auth.value = await jwt.sign({id: user._id}), { expires: new Date(Date.now() + 604800000)};
-
+       
+       
+        auth.set({
+            value: await jwt.sign({id: user._id}),
+            expires: new Date(Date.now() + 604800000),
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/'
+        });
     })
     .post('/signUp', async ({jwt,cookie:{auth},body,set}) => { 
         try {

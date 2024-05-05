@@ -10,10 +10,8 @@ export const usersController = new Elysia({prefix: '/users'})
         secret: process.env.JWT_SECRET as string,
         exp: '7d'
     }))
-    .get('/me', async ({jwt,set,cookie}) => {
-      const token = cookie;
-       console.log(token);
-      const result = await jwt.verify("eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY2MmRhYzhlNDI3NmUzNWJkNzlkOTY4YiIsImV4cCI6MTcxNDg3NjAwMn0.UjNBroJQAR_R-c0Eee7L79nmQ-AzmVVA88JnVaU8vAQ");
+    .get('/me', async ({jwt,set,cookie:{auth}}) => {
+      const result = await jwt.verify(auth.value);
       if (result !== false) {
         const id = result.id;
         const user = await User.findById(id);
